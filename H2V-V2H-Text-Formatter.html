@@ -91,7 +91,7 @@
             padding: 0.5rem 1.2rem;
             cursor: pointer;
             font-size: 0.9rem;
-            transition: background 0.3s;
+            transition: background 0.3s, color 0.3s;
         }
 
         .copy-btn:hover {
@@ -137,16 +137,23 @@
 
         function copyToClipboard() {
             const outputDiv = document.getElementById('output');
+            const copyBtn = document.querySelector('.copy-btn');
             const textToCopy = outputDiv.textContent;
 
             if (textToCopy && textToCopy !== 'Please enter valid text to format!') {
                 navigator.clipboard.writeText(textToCopy).then(() => {
-                    alert('Text copied to clipboard!');
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyBtn.textContent = 'Copy to Clipboard';
+                    }, 2000);
                 }).catch(err => {
-                    alert('Failed to copy text: ' + err);
+                    console.error('Failed to copy text: ', err);
                 });
             } else {
-                alert('No text to copy!');
+                copyBtn.textContent = 'No text to copy!';
+                setTimeout(() => {
+                    copyBtn.textContent = 'Copy to Clipboard';
+                }, 2000);
             }
         }
     </script>
