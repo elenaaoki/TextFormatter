@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mass Text Joiner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #007BFF;
+        }
+        .textarea-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .textarea-container > div {
+            flex: 1;
+            min-width: 280px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            font-size: 14px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px 15px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+        .hidden {
+            display: none;
+        }
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            button {
+                font-size: 14px;
+            }
+            .textarea-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mass Text Joiner</h1>
+        <div class="textarea-container">
+            <div>
+                <label for="text1">Text 1:</label>
+                <textarea id="text1" placeholder="Enter text 1 (one line per entry)"></textarea>
+            </div>
+            <div>
+                <label for="text2">Text 2:</label>
+                <textarea id="text2" placeholder="Enter text 2 (one line per entry)"></textarea>
+            </div>
+        </div>
+        <button id="joinButton">Join Texts</button>
+        <button id="copyButton" class="hidden">Copy to Clipboard</button>
+
+        <div id="output" class="hidden"></div>
+    </div>
+
+    <script>
+        const text1Input = document.getElementById('text1');
+        const text2Input = document.getElementById('text2');
+        const joinButton = document.getElementById('joinButton');
+        const copyButton = document.getElementById('copyButton');
+        const outputDiv = document.getElementById('output');
+
+        joinButton.addEventListener('click', () => {
+            const text1Lines = text1Input.value.split('\n');
+            const text2Lines = text2Input.value.split('\n');
+            const maxLines = Math.max(text1Lines.length, text2Lines.length);
+
+            let result = '';
+
+            for (let i = 0; i < maxLines; i++) {
+                const part1 = text1Lines[i] || '';
+                const part2 = text2Lines[i] || '';
+                result += `${part1}${part2}\n`;
+            }
+
+            outputDiv.textContent = result;
+            outputDiv.classList.remove('hidden');
+            copyButton.classList.remove('hidden');
+            copyButton.textContent = 'Copy to Clipboard';
+        });
+
+        copyButton.addEventListener('click', () => {
+            const text = outputDiv.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                copyButton.textContent = 'Copied';
+                setTimeout(() => {
+                    copyButton.textContent = 'Copy to Clipboard';
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>
