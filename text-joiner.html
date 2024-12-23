@@ -26,6 +26,25 @@
             margin-bottom: 20px;
             color: #007BFF;
         }
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .mode-button {
+            padding: 8px 16px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            background: transparent;
+            color: #007BFF;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .mode-button.active {
+            background: #007BFF;
+            color: white;
+        }
         .textarea-container {
             display: flex;
             flex-wrap: wrap;
@@ -36,15 +55,58 @@
             flex: 1;
             min-width: 280px;
         }
-        textarea {
-            width: 100%;
+        .editor-wrap {
+            position: relative;
             height: 150px;
-            font-size: 14px;
-            padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
-            resize: vertical;
+            overflow: hidden;
+        }
+        .single-line {
+            height: 38px !important;
+        }
+        .multi-line {
+            height: 150px;
+        }
+        .line-numbers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 40px;
+            height: 100%;
+            padding: 5px 0;
+            background: #f8f9fa;
+            border-right: 1px solid #eee;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 20px;
+            text-align: right;
+            color: #999;
+            overflow: hidden;
+            user-select: none;
             box-sizing: border-box;
+        }
+        .line-numbers span {
+            display: block;
+            padding-right: 8px;
+            height: 20px;
+        }
+        textarea {
+            position: absolute;
+            top: 0;
+            left: 40px;
+            width: calc(100% - 40px);
+            height: 100%;
+            padding: 5px 8px;
+            border: none;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 20px;
+            resize: none;
+            outline: none;
+            background: transparent;
+            box-sizing: border-box;
+            overflow-y: auto;
         }
         button {
             width: 100%;
@@ -56,6 +118,7 @@
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s ease;
+            margin-bottom: 10px;
         }
         button:hover {
             background-color: #0056b3;
@@ -67,6 +130,7 @@
             border-radius: 5px;
             background-color: #f9f9f9;
             white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
         }
         .hidden {
             display: none;
@@ -87,19 +151,36 @@
 <body>
     <div class="container">
         <h1>Mass Text Joiner</h1>
+        <div class="mode-selector">
+            <button class="mode-button active" data-mode="multi">Multi-Line Mode</button>
+            <button class="mode-button" data-mode="single">Single-Line Prefix Mode</button>
+        </div>
         <div class="textarea-container">
             <div>
                 <label for="text1">Text 1:</label>
-                <textarea id="text1" placeholder="Enter text 1 (one line per entry)"></textarea>
+                <div class="editor-wrap">
+                    <div class="line-numbers" id="lineNumbers1"></div>
+                    <textarea 
+                        id="text1" 
+                        spellcheck="false" 
+                        placeholder="Enter text 1 (one line per entry)"
+                    ></textarea>
+                </div>
             </div>
             <div>
                 <label for="text2">Text 2:</label>
-                <textarea id="text2" placeholder="Enter text 2 (one line per entry)"></textarea>
+                <div class="editor-wrap">
+                    <div class="line-numbers" id="lineNumbers2"></div>
+                    <textarea 
+                        id="text2" 
+                        spellcheck="false" 
+                        placeholder="Enter text 2 (one line per entry)"
+                    ></textarea>
+                </div>
             </div>
         </div>
         <button id="joinButton">Join Texts</button>
         <button id="copyButton" class="hidden">Copy to Clipboard</button>
-
         <div id="output" class="hidden"></div>
     </div>
 
@@ -109,21 +190,86 @@
         const joinButton = document.getElementById('joinButton');
         const copyButton = document.getElementById('copyButton');
         const outputDiv = document.getElementById('output');
+        const lineNumbers1 = document.getElementById('lineNumbers1');
+        const lineNumbers2 = document.getElementById('lineNumbers2');
+        const modeButtons = document.querySelectorAll('.mode-button');
+        let currentMode = 'multi';
+
+        function updateLineNumbers(textarea, lineNumbersElement) {
+            const lines = textarea.value.split('\n');
+            const lineCount = Math.max(1, lines.length);
+            lineNumbersElement.innerHTML = Array(lineCount)
+                .fill()
+                .map((_, i) => `<span>${i + 1}</span>`)
+                .join('');
+        }
+
+        function syncScroll(textarea, lineNumbersElement) {
+            lineNumbersElement.style.transform = `translateY(-${textarea.scrollTop}px)`;
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            const text1Container = text1Input.parentElement;
+            
+            if (mode === 'single') {
+                text1Container.classList.add('single-line');
+                text1Input.placeholder = "Enter prefix (e.g., wa.me/)";
+            } else {
+                text1Container.classList.remove('single-line');
+                text1Input.placeholder = "Enter text 1 (one line per entry)";
+            }
+
+            // Clear the output when switching modes
+            outputDiv.classList.add('hidden');
+            copyButton.classList.add('hidden');
+        }
+
+        modeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                modeButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                switchMode(button.dataset.mode);
+            });
+        });
+
+        // Event listeners for text input
+        text1Input.addEventListener('input', () => {
+            updateLineNumbers(text1Input, lineNumbers1);
+            if (currentMode === 'single') {
+                text1Input.value = text1Input.value.replace(/\n/g, ''); // Remove line breaks in single mode
+            }
+        });
+        text2Input.addEventListener('input', () => {
+            updateLineNumbers(text2Input, lineNumbers2);
+        });
+
+        // Event listeners for scrolling
+        text1Input.addEventListener('scroll', () => {
+            syncScroll(text1Input, lineNumbers1);
+        });
+        text2Input.addEventListener('scroll', () => {
+            syncScroll(text2Input, lineNumbers2);
+        });
 
         joinButton.addEventListener('click', () => {
             const text1Lines = text1Input.value.split('\n');
             const text2Lines = text2Input.value.split('\n');
-            const maxLines = Math.max(text1Lines.length, text2Lines.length);
-
             let result = '';
 
-            for (let i = 0; i < maxLines; i++) {
-                const part1 = text1Lines[i] || '';
-                const part2 = text2Lines[i] || '';
-                result += `${part1}${part2}\n`;
+            if (currentMode === 'single') {
+                const prefix = text1Input.value;
+                result = text2Lines.map(line => `${prefix}${line}`).join('\n');
+            } else {
+                const maxLines = Math.max(text1Lines.length, text2Lines.length);
+                for (let i = 0; i < maxLines; i++) {
+                    const part1 = text1Lines[i] || '';
+                    const part2 = text2Lines[i] || '';
+                    result += `${part1}${part2}\n`;
+                }
             }
 
-            outputDiv.textContent = result;
+            outputDiv.textContent = result.trim();
             outputDiv.classList.remove('hidden');
             copyButton.classList.remove('hidden');
             copyButton.textContent = 'Copy to Clipboard';
@@ -132,12 +278,16 @@
         copyButton.addEventListener('click', () => {
             const text = outputDiv.textContent;
             navigator.clipboard.writeText(text).then(() => {
-                copyButton.textContent = 'Copied';
+                copyButton.textContent = 'Copied!';
                 setTimeout(() => {
                     copyButton.textContent = 'Copy to Clipboard';
                 }, 2000);
             });
         });
+
+        // Initialize line numbers
+        updateLineNumbers(text1Input, lineNumbers1);
+        updateLineNumbers(text2Input, lineNumbers2);
     </script>
 </body>
 </html>
